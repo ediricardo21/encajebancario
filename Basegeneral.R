@@ -5,6 +5,7 @@ library(xlsx)
 library(ggplot2)
 library(scales)
 library(tidyr)
+library(psych)
 # Lectura de bases --------------------------------------------------------
 
 #Pichincha
@@ -138,6 +139,26 @@ imagen3 <- ggplot(data=Dataencaje,aes(x=ANO))+
   theme_gray()
 plot(imagen3)
 
+GDP <- read_excel("GDP.xlsx")
+GDP <- as.data.frame(GDP)
+GDP <- GDP %>% filter(Ano > 2001)
 
+RIESGO <- read_excel("RIESGOPAIS.xlsx")
+RIESGO <- as.data.frame(RIESGO)
+RIESGO <- RIESGO %>% group_by(Ano) %>% summarise(Riesgo=mean(TASA,na.rm=TRUE))
+RIESGO <- RIESGO %>% filter(Ano > 01)
 
+Infoextra <- bind_cols(GDP,RIESGO$Riesgo)
+colnames(Infoextra) <- c("ANO","GDP","RIESGO")
+Infoextra <- bind_cols(Infoextra,(Dataencaje$TasaReal/100))
+colnames(Infoextra) <- c("ANO","GDP","RIESGO","TASA REAL")
+View(Infoextra)
 
+imagen4 <- ggplot(data=Infoextra,aes(x=ANO))+
+  geom_line(aes(y=Infoextra$RIESGO))+
+  geom_line(aes(y=Infoextra$`TASA REAL`))+
+  scale_y_continuous(name="Riesgo Pais",sec.axis = sec_axis(name="Tasa Real"))
+
+imagen4
+
+#cor(Infoextra$RIESGO,Infoextra$`TASA REAL`)
