@@ -6,6 +6,7 @@ library(ggplot2)
 library(scales)
 library(tidyr)
 library(psych)
+library(formattable)
 # Lectura de bases --------------------------------------------------------
 
 #Pichincha
@@ -70,7 +71,7 @@ Dataencaje <- bind_cols(Dataencaje,EncajeTotal)
 
 Dataencaje$Encajelegalporcentaje <- c(0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.04,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.05,0.05,
                                       0.05,0.05,0.05,0.05)
-Dataencaje <- Dataencaje %>% mutate(EncajeLegal=Encajelegalporcentaje*ENCAJEREAL)
+Dataencaje <- Dataencaje %>% mutate(EncajeLegal=Encajelegalporcentaje*ENCAJETOTAL)
 
 
 
@@ -125,6 +126,35 @@ imagen2 <- ggplot(data=Dataencaje,aes(x=ANO))+
 
 plot(imagen2)
 
+
+# Imagen 2 Escala ---------------------------------------------------------
+
+scala <- Dataencaje %>% select(ANO,ENCAJEREAL,EncajeLegal) %>% mutate(ENCAJEREAL=ENCAJEREAL/10000000,EncajeLegal=EncajeLegal/10000000)
+imagen2 <- ggplot(data=scala,aes(x=ANO))+
+  geom_line(aes(y=ENCAJEREAL))+
+  geom_line(aes(y=(EncajeLegal)))+
+  geom_text(aes(x= ANO ,y=round((ENCAJEREAL+10),2), label=round(ENCAJEREAL,2)),col="Blue")+
+  geom_text(aes(x= ANO ,y=round((EncajeLegal-10),2), label=round(EncajeLegal,2)),col="Red")+
+  #scale_x_continuous("AÑO", labels = as.character(scala$ANO), breaks = scala$ANO)+
+  scale_y_continuous(labels = (~.))+
+  ylab("Encaje Real ($10,000,000)")+
+  xlab("Año")+
+  geom_label(aes(x=2015,y=-10),label="Cantidad requeridad por el Banco Central",color="Red")+
+  geom_label(aes(x=2009,y=100),label="Cantidad aportada al Banco Central",color="Blue")+
+  geom_label(aes(x=2018,y=105),label="Diferencia = Impacto Monetario",label.padding = unit(0.25, "lines"),label.size = 0.5,
+             color="skyblue",fill="navy")+
+  ggtitle("Encaje Bancario Valor Monetario")+
+  theme_classic()
+  
+imagen2
+
+View(scala)
+
+
+# Continuacion ------------------------------------------------------------
+
+
+
 imagen3 <- ggplot(data=Dataencaje,aes(x=ANO))+
   geom_line(aes(y=T.ACTIVA.IMPLICITA),col="black",size=2)+
   geom_line(aes(y=T.ACTIVA.IMPACTO),col="Red",size=2)+
@@ -154,11 +184,37 @@ Infoextra <- bind_cols(Infoextra,(Dataencaje$TasaReal/100))
 colnames(Infoextra) <- c("ANO","GDP","RIESGO","TASA REAL")
 View(Infoextra)
 
-imagen4 <- ggplot(data=Infoextra,aes(x=ANO))+
-  geom_line(aes(y=Infoextra$RIESGO))+
-  geom_line(aes(y=Infoextra$`TASA REAL`))+
-  scale_y_continuous(name="Riesgo Pais",sec.axis = sec_axis(name="Tasa Real"))
+image4 <- ggplot(data=Infoextra,aes(x=ANO))+
+  geom_line(aes(y=RIESGO),color="Red")+
+  geom_line(aes(y=`TASA REAL`*10000),color="blue")+
+  scale_y_continuous(sec.axis = sec_axis(~./10000, name = "Encaje Real",labels = scales::label_percent()))
+    
+image4
 
-imagen4
+image5 <- ggplot(data=Infoextra,aes(x=ANO))+
+  geom_line(aes(y=GDP),color="Red")+
+  geom_line(aes(y=`TASA REAL`*1000000000000),color="blue")+
+  scale_y_continuous(sec.axis = sec_axis(~./1000000000000, name = "Encaje Real",labels = scales::label_percent()))
+
+image5
+
+
+cor.test(Infoextra$GDP,Infoextra$`TASA REAL`)
+cor.test(Infoextra$RIESGO,Infoextra$`TASA REAL`)
+
+IMPACTO <- Dataencaje %>% select(ANO,Impacto)
+IMPACTO$Impacto <- currency(IMPACTO$Impacto,digits = 2L)
+View(IMPACTO)
+
+imagen5 <- ggplot(data=IMPACTO,aes(x=ANO,y=Impacto))+
+  geom_bar(position = "dodge", stat = 'identity',fill="blue")+
+  geom_text(aes(label=Impacto/10000000), position=position_dodge(width=0.9), vjust=-0.25)+
+  ylab(("Impacto-($10,000,000)"))+
+  xlab("Año")+
+  scale_y_continuous(labels = (~./10000000))+
+  ggtitle("Cálculo del Impacto Monetario")+
+  theme_classic()
+imagen5
+
 
 #cor(Infoextra$RIESGO,Infoextra$`TASA REAL`)
